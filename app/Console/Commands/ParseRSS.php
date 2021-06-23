@@ -4,6 +4,8 @@ namespace App\Console\Commands;
 
 use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
+use App\Models\News;
+use App\Models\Photos;
 
 class ParseRSS extends Command
 {
@@ -43,7 +45,31 @@ class ParseRSS extends Command
 
         foreach ($rss->channel->item as $item)
         {
-            \Log::info($item->title);
+            $n = News::firstOrCreate([
+                'title' => $item->title,
+                'link' => $item->link,
+                'description' => $item->description,
+                'published' => strftime("%Y-%m-%d %H:%M:%S", strtotime($item->pubDate)),
+                'author' => $item->author ? $item->author : null
+            ]);
+
+            if ($n->wasRecentlyCreated) 
+            {
+                if (isset($item->enclosure))
+                {
+                    foreach ($item->enclosure as $e)
+                    {
+                        if ($e['type'] == 'image/jpeg')
+                        {
+                            //\Log::info($e['url']);
+                            $p = Photos::firstOrCreate([
+                                'news_id' => $n->id,
+                                'photo_url' => $e['url']
+                            ]);
+                        }
+                    }
+                }
+            }
         }
     }
 }
