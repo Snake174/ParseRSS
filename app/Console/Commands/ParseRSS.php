@@ -6,6 +6,7 @@ use Illuminate\Console\Command;
 use Illuminate\Support\Facades\Http;
 use App\Models\News;
 use App\Models\Photos;
+use App\Models\Logs;
 
 class ParseRSS extends Command
 {
@@ -43,6 +44,14 @@ class ParseRSS extends Command
         $response = Http::get(env('RSS_URL'));
         $rss = simplexml_load_string($response->body());
 
+        Logs::firstOrCreate([
+            'dt' => date('Y-m-d h:i:s', time()),
+            'method' => 'GET', 
+            'url' => env('RSS_URL'), 
+            'code' => $response->status(), 
+            'body' => $response->body()
+        ]);
+
         foreach ($rss->channel->item as $item)
         {
             $n = News::firstOrCreate([
@@ -61,8 +70,7 @@ class ParseRSS extends Command
                     {
                         if ($e['type'] == 'image/jpeg')
                         {
-                            //\Log::info($e['url']);
-                            $p = Photos::firstOrCreate([
+                            Photos::firstOrCreate([
                                 'news_id' => $n->id,
                                 'photo_url' => $e['url']
                             ]);
