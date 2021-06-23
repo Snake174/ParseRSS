@@ -42,8 +42,7 @@ class ParseRSS extends Command
     public function handle()
     {
         $response = Http::get(env('RSS_URL'));
-        $rss = simplexml_load_string($response->body());
-
+        
         Logs::firstOrCreate([
             'dt' => date('Y-m-d h:i:s', time()),
             'method' => 'GET', 
@@ -51,6 +50,8 @@ class ParseRSS extends Command
             'code' => $response->status(), 
             'body' => $response->body()
         ]);
+        
+        $rss = simplexml_load_string($response->body());
 
         foreach ($rss->channel->item as $item)
         {
